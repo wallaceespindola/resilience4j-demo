@@ -23,7 +23,16 @@
 hs_err_pid*
 replay_pid*
 
+# IDE files
+.idea/
+*.iml
+.vscode/
+
+# OS files
+.DS_Store
+*/.DS_Store/*
 # AI tools
 .ai/
 .claude/
 CLAUDE.MD
+AGENTS.MD
