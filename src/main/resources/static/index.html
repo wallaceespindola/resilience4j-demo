@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resilience4J Demo — Test Console</title>
+  <style>
+    :root { --bg:#0d1117; --bg2:#161b22; --bg3:#21262d; --border:#30363d;
+            --text:#e6edf3; --muted:#8b949e; --green:#3fb950; --red:#f85149;
+            --orange:#d29922; --blue:#58a6ff; --purple:#bc8cff; --cyan:#39d353; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif;
+           font-size:14px; line-height:1.5; }
+    nav { background:var(--bg2); border-bottom:1px solid var(--border); padding:12px 20px;
+          display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+    nav a { color:var(--blue); text-decoration:none; font-size:13px; }
+    nav a:hover { text-decoration:underline; }
+    nav .title { font-weight:700; font-size:16px; color:var(--text); margin-right:8px; }
+    .container { max-width:1200px; margin:0 auto; padding:20px; }
+    h2 { font-size:15px; font-weight:600; color:var(--blue); margin-bottom:8px;
+         padding-bottom:6px; border-bottom:1px solid var(--border); }
+    .section { background:var(--bg2); border:1px solid var(--border); border-radius:8px;
+               padding:16px; margin-bottom:16px; }
+    .desc { color:var(--muted); font-size:12px; margin-bottom:12px; line-height:1.6; }
+    .btn-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:12px; }
+    button { background:var(--bg3); color:var(--text); border:1px solid var(--border);
+             border-radius:6px; padding:6px 14px; font-size:12px; cursor:pointer;
+             transition:background .15s,border-color .15s; }
+    button:hover { background:#2d333b; border-color:var(--blue); }
+    button.primary   { background:#1f6feb; border-color:#388bfd; }
+    button.primary:hover { background:#388bfd; }
+    button.danger    { background:#6e1c1c; border-color:var(--red); }
+    button.danger:hover  { background:#8b2020; }
+    button.success   { background:#1a4428; border-color:var(--green); }
+    button.success:hover { background:#1f5430; }
+    button.warning   { background:#3d2b00; border-color:var(--orange); }
+    button.warning:hover { background:#503900; }
+    input[type=number] { background:var(--bg3); color:var(--text); border:1px solid var(--border);
+                          border-radius:6px; padding:6px 10px; font-size:12px; width:90px; }
+    pre { background:var(--bg); border:1px solid var(--border); border-radius:6px;
+          padding:12px; font-size:11px; max-height:220px; overflow-y:auto; white-space:pre-wrap;
+          word-break:break-word; color:var(--cyan); margin-top:8px; }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .label { color:var(--muted); font-size:11px; margin-right:4px; }
+    .cid-bar { font-size:11px; color:var(--muted); margin-top:6px; }
+    @media(max-width:700px) { .grid2 { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<nav>
+  <span class="title">⚡ Resilience4J Demo</span>
+  <a href="/">Test Console</a>
+  <a href="/dashboard.html">📊 Dashboard</a>
+  <a href="/swagger-ui.html" target="_blank">Swagger UI</a>
+  <a href="/actuator/health" target="_blank">Actuator Health</a>
+  <a href="/actuator/info" target="_blank">Actuator Info</a>
+  <a href="/h2-console" target="_blank">H2 Console</a>
+</nav>
+
+<div class="container">
+
+  <!-- FAULT INJECTION -->
+  <div class="section">
+    <h2>🔥 Fault Injection Control Panel</h2>
+    <p class="desc">Toggle failure modes on the simulated downstream API. All Resilience4J modules react to these settings.</p>
+    <div class="btn-row">
+      <button class="success" onclick="fault('reset')">✅ Reset (Healthy)</button>
+      <button class="warning" onclick="fault('flaky')">🎲 Flaky 50%</button>
+      <button class="warning" onclick="fault('slow')">🐢 Slow 2s</button>
+      <button class="danger" onclick="fault('timeout')">⏱ Force Timeout</button>
+      <button class="danger" onclick="fault('http500')">💥 Force HTTP 500</button>
+      <button class="danger" onclick="fault('chaos')">🌪 Chaos Mode</button>
+      <button onclick="fault('settings')">📋 Get Settings</button>
+    </div>
+    <div class="btn-row">
+      <span class="label">Error Rate:</span>
+      <input type="number" id="errorRate" min="0" max="100" value="50" style="width:70px">
+      <button onclick="setErrorRate()">Set Rate</button>
+      <span class="label" style="margin-left:12px">Delay (ms):</span>
+      <input type="number" id="delayMs" min="0" value="1000" style="width:80px">
+      <button onclick="setDelay()">Set Delay</button>
+    </div>
+    <pre id="fault-out">// Click a button above...</pre>
+    <div class="cid-bar" id="fault-cid"></div>
+  </div>
+
+  <!-- TRANSFER -->
+  <div class="section">
+    <h2>📦 Bulk Transfer (all 6 R4J modules active)</h2>
+    <p class="desc">Transfers N records from the simulated API using RateLimiter→Bulkhead→CircuitBreaker→TimeLimiter→Retry. Persists to H2.</p>
+    <div class="btn-row">
+      <span class="label">Records:</span>
+      <input type="number" id="totalRecords" value="100" min="1" max="5000">
+      <span class="label">Page Size:</span>
+      <input type="number" id="pageSize" value="10" min="1" max="500">
+      <button class="primary" onclick="startTransfer()">🚀 Start Transfer</button>
+      <button onclick="getHistory()">📜 History</button>
+    </div>
+    <pre id="transfer-out">// Click Start Transfer...</pre>
+    <div class="cid-bar" id="transfer-cid"></div>
+  </div>
+
+  <div class="grid2">
+
+    <!-- CIRCUIT BREAKER -->
+    <div class="section">
+      <h2>⚡ CircuitBreaker</h2>
+      <p class="desc">CLOSED→OPEN after 50% failure in last 10 calls. Waits 10s, then HALF_OPEN with 3 probe calls. Trip it: set Force HTTP 500, then spam 10 calls.</p>
+      <div class="btn-row">
+        <button onclick="cbCall()">Make Call</button>
+        <button onclick="cbSpam(10)">Spam 10</button>
+        <button onclick="cbState()">Get State</button>
+        <button class="danger" onclick="cbForceOpen()">Force OPEN</button>
+        <button class="success" onclick="cbReset()">Reset CLOSED</button>
+      </div>
+      <pre id="cb-out">// ...</pre>
+      <div class="cid-bar" id="cb-cid"></div>
+    </div>
+
+    <!-- RETRY -->
+    <div class="section">
+      <h2>🔄 Retry</h2>
+      <p class="desc">Up to 3 attempts with exponential backoff (300ms→600ms). Try with Flaky 50% to see retries, or Force HTTP 500 to exhaust all attempts.</p>
+      <div class="btn-row">
+        <button onclick="retryCall()">Make Call</button>
+        <button onclick="retrySpam(5)">Spam 5</button>
+      </div>
+      <pre id="retry-out">// ...</pre>
+      <div class="cid-bar" id="retry-cid"></div>
+    </div>
+
+    <!-- RATE LIMITER -->
+    <div class="section">
+      <h2>🚦 RateLimiter</h2>
+      <p class="desc">Allows 5 calls/second. Click "Spam 20" to see ~5 succeed and ~15 rejected immediately. Wait 1s for the bucket to refill.</p>
+      <div class="btn-row">
+        <button onclick="rlCall()">Make Call</button>
+        <button onclick="rlSpam(20)">Spam 20</button>
+        <button onclick="rlMetrics()">Metrics</button>
+      </div>
+      <pre id="rl-out">// ...</pre>
+      <div class="cid-bar" id="rl-cid"></div>
+    </div>
+
+    <!-- BULKHEAD -->
+    <div class="section">
+      <h2>🧱 Bulkhead</h2>
+      <p class="desc">Max 5 concurrent calls. Enable Slow (2s) then trigger 10 concurrent — 5 admitted, 5 rejected. Protects threads from one slow dependency.</p>
+      <div class="btn-row">
+        <button onclick="bhCall()">Make Call</button>
+        <button onclick="bhConcurrent(10)">10 Concurrent</button>
+        <button onclick="bhMetrics()">Metrics</button>
+      </div>
+      <pre id="bh-out">// ...</pre>
+      <div class="cid-bar" id="bh-cid"></div>
+    </div>
+
+    <!-- TIME LIMITER -->
+    <div class="section">
+      <h2>⏳ TimeLimiter</h2>
+      <p class="desc">Cancels async futures after 1500ms. Enable "Force Timeout" (3s delay) to trigger a TimeoutException. A fallback is served automatically.</p>
+      <div class="btn-row">
+        <button onclick="tlCall()">Make Call</button>
+      </div>
+      <pre id="tl-out">// ...</pre>
+      <div class="cid-bar" id="tl-cid"></div>
+    </div>
+
+    <!-- CACHE -->
+    <div class="section">
+      <h2>💾 Cache</h2>
+      <p class="desc">Caches metadata lookups in Caffeine (TTL 30s). Call the same key twice — first is a miss, second is a hit. Enable HTTP 500 to see cached values still served.</p>
+      <div class="btn-row">
+        <button onclick="cacheKey('region')">Get "region"</button>
+        <button onclick="cacheKey('env')">Get "env"</button>
+        <button onclick="cacheAll()">Get All</button>
+        <button onclick="cacheStats()">Stats</button>
+        <button class="warning" onclick="cacheClear()">Clear Cache</button>
+      </div>
+      <pre id="cache-out">// ...</pre>
+      <div class="cid-bar" id="cache-cid"></div>
+    </div>
+
+  </div><!-- /grid2 -->
+
+  <!-- METRICS SNAPSHOT -->
+  <div class="section">
+    <h2>📊 Resilience Metrics Snapshot</h2>
+    <p class="desc">Point-in-time snapshot of all R4J module metrics. See the <a href="/dashboard.html" style="color:var(--blue)">Dashboard</a> for live polling charts.</p>
+    <div class="btn-row">
+      <button onclick="getMetrics()">🔄 Refresh Metrics</button>
+    </div>
+    <pre id="metrics-out">// ...</pre>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+  const BASE = '';
+
+  async function api(method, path, body) {
+    const opts = { method, headers: {'Content-Type':'application/json'} };
+    if (body) opts.body = JSON.stringify(body);
+    const res = await fetch(BASE + path, opts);
+    const cid = res.headers.get('X-Correlation-Id') || 'n/a';
+    const data = await res.json();
+    return { data, cid };
+  }
+
+  function show(elId, cidId, { data, cid }) {
+    document.getElementById(elId).textContent = JSON.stringify(data, null, 2);
+    if (cidId) document.getElementById(cidId).textContent = 'correlationId: ' + cid;
+  }
+
+  function err(elId, e) {
+    document.getElementById(elId).textContent = 'Error: ' + e.message;
+  }
+
+  // Fault Injection
+  async function fault(action) {
+    try {
+      const method = action === 'settings' ? 'GET' : 'GET';
+      const r = await api('GET', `/api/fault/${action}`);
+      show('fault-out', 'fault-cid', r);
+    } catch(e) { err('fault-out', e); }
+  }
+  async function setErrorRate() {
+    const rate = document.getElementById('errorRate').value;
+    try { show('fault-out', 'fault-cid', await api('GET', `/api/fault/error-rate/${rate}`)); }
+    catch(e) { err('fault-out', e); }
+  }
+  async function setDelay() {
+    const ms = document.getElementById('delayMs').value;
+    try { show('fault-out', 'fault-cid', await api('GET', `/api/fault/delay/${ms}`)); }
+    catch(e) { err('fault-out', e); }
+  }
+
+  // Transfer
+  async function startTransfer() {
+    const total = +document.getElementById('totalRecords').value;
+    const ps    = +document.getElementById('pageSize').value;
+    try { show('transfer-out', 'transfer-cid', await api('GET', `/api/transfer/start/${total}/${ps}`)); }
+    catch(e) { err('transfer-out', e); }
+  }
+  async function getHistory() {
+    try { show('transfer-out', 'transfer-cid', await api('GET', '/api/transfer/history')); }
+    catch(e) { err('transfer-out', e); }
+  }
+
+  // Circuit Breaker
+  async function cbCall()           { try { show('cb-out','cb-cid', await api('GET','/api/cb/call')); } catch(e){err('cb-out',e);} }
+  async function cbSpam(n)          { try { show('cb-out','cb-cid', await api('GET',`/api/cb/spam/${n}`)); } catch(e){err('cb-out',e);} }
+  async function cbState()          { try { show('cb-out','cb-cid', await api('GET','/api/cb/state')); } catch(e){err('cb-out',e);} }
+  async function cbForceOpen()      { try { show('cb-out','cb-cid', await api('GET','/api/cb/force-open')); } catch(e){err('cb-out',e);} }
+  async function cbReset()          { try { show('cb-out','cb-cid', await api('GET','/api/cb/reset')); } catch(e){err('cb-out',e);} }
+
+  // Retry
+  async function retryCall()        { try { show('retry-out','retry-cid', await api('GET','/api/retry/call')); } catch(e){err('retry-out',e);} }
+  async function retrySpam(n)       { try { show('retry-out','retry-cid', await api('GET',`/api/retry/spam/${n}`)); } catch(e){err('retry-out',e);} }
+
+  // Rate Limiter
+  async function rlCall()           { try { show('rl-out','rl-cid', await api('GET','/api/rate-limiter/call')); } catch(e){err('rl-out',e);} }
+  async function rlSpam(n)          { try { show('rl-out','rl-cid', await api('GET',`/api/rate-limiter/spam/${n}`)); } catch(e){err('rl-out',e);} }
+  async function rlMetrics()        { try { show('rl-out','rl-cid', await api('GET','/api/rate-limiter/metrics')); } catch(e){err('rl-out',e);} }
+
+  // Bulkhead
+  async function bhCall()           { try { show('bh-out','bh-cid', await api('GET','/api/bulkhead/call')); } catch(e){err('bh-out',e);} }
+  async function bhConcurrent(n)    { try { show('bh-out','bh-cid', await api('GET',`/api/bulkhead/concurrent/${n}`)); } catch(e){err('bh-out',e);} }
+  async function bhMetrics()        { try { show('bh-out','bh-cid', await api('GET','/api/bulkhead/metrics')); } catch(e){err('bh-out',e);} }
+
+  // Time Limiter
+  async function tlCall()           { try { show('tl-out','tl-cid', await api('GET','/api/time-limiter/call')); } catch(e){err('tl-out',e);} }
+
+  // Cache
+  async function cacheKey(k)        { try { show('cache-out','cache-cid', await api('GET',`/api/cache/metadata/${k}`)); } catch(e){err('cache-out',e);} }
+  async function cacheAll()         { try { show('cache-out','cache-cid', await api('GET','/api/cache/all')); } catch(e){err('cache-out',e);} }
+  async function cacheStats()       { try { show('cache-out','cache-cid', await api('GET','/api/cache/stats')); } catch(e){err('cache-out',e);} }
+  async function cacheClear()       { try { show('cache-out','cache-cid', await api('GET','/api/cache/clear')); } catch(e){err('cache-out',e);} }
+
+  // Metrics
+  async function getMetrics()       { try { show('metrics-out',null, await api('GET','/api/metrics/resilience')); } catch(e){err('metrics-out',e);} }
+</script>
+</body>
+</html>

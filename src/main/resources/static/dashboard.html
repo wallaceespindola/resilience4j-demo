@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resilience4J Demo — Live Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root { --bg:#0d1117; --bg2:#161b22; --bg3:#21262d; --border:#30363d;
+            --text:#e6edf3; --muted:#8b949e; --green:#3fb950; --red:#f85149;
+            --orange:#d29922; --blue:#58a6ff; --purple:#bc8cff; --cyan:#39d353; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif;
+           font-size:13px; line-height:1.5; }
+    nav { background:var(--bg2); border-bottom:1px solid var(--border); padding:10px 20px;
+          display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+    nav a { color:var(--blue); text-decoration:none; font-size:12px; }
+    nav .title { font-weight:700; font-size:15px; color:var(--text); }
+    .container { max-width:1400px; margin:0 auto; padding:16px; }
+    .top-bar { display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+    .top-bar span { font-size:12px; color:var(--muted); }
+    .badge { display:inline-block; padding:3px 10px; border-radius:20px; font-weight:700;
+             font-size:12px; letter-spacing:.5px; }
+    .badge-CLOSED      { background:#1a4428; color:var(--green); border:1px solid var(--green); }
+    .badge-HALF_OPEN   { background:#3d2b00; color:var(--orange); border:1px solid var(--orange); }
+    .badge-OPEN        { background:#3d0000; color:var(--red); border:1px solid var(--red); }
+    .badge-FORCED_OPEN { background:#3d0000; color:var(--red); border:1px solid var(--red); }
+    .badge-DISABLED    { background:var(--bg3); color:var(--muted); border:1px solid var(--border); }
+    .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px; }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+    .card { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:14px; }
+    .card h3 { font-size:12px; font-weight:600; color:var(--blue); margin-bottom:10px;
+               text-transform:uppercase; letter-spacing:.5px; }
+    .metric { display:flex; justify-content:space-between; align-items:center;
+              padding:4px 0; border-bottom:1px solid var(--border); }
+    .metric:last-child { border-bottom:none; }
+    .metric .key   { color:var(--muted); font-size:12px; }
+    .metric .val   { font-weight:600; font-size:13px; color:var(--text); }
+    .val-good  { color:var(--green) !important; }
+    .val-warn  { color:var(--orange) !important; }
+    .val-bad   { color:var(--red) !important; }
+    button { background:var(--bg3); color:var(--text); border:1px solid var(--border);
+             border-radius:6px; padding:5px 12px; font-size:11px; cursor:pointer; }
+    button:hover { background:#2d333b; border-color:var(--blue); }
+    button.primary { background:#1f6feb; border-color:#388bfd; }
+    button.danger  { background:#6e1c1c; border-color:var(--red); }
+    button.success { background:#1a4428; border-color:var(--green); }
+    button.warning { background:#3d2b00; border-color:var(--orange); }
+    .btn-row { display:flex; flex-wrap:wrap; gap:6px; }
+    .chart-card { background:var(--bg2); border:1px solid var(--border); border-radius:8px;
+                  padding:14px; margin-bottom:12px; }
+    .chart-card h3 { font-size:12px; font-weight:600; color:var(--blue); margin-bottom:10px;
+                     text-transform:uppercase; }
+    canvas { max-height:220px; }
+    pre { background:var(--bg); border:1px solid var(--border); border-radius:6px;
+          padding:8px; font-size:10px; max-height:80px; overflow-y:auto;
+          white-space:pre-wrap; color:var(--cyan); margin-top:8px; }
+    .fault-settings { display:grid; grid-template-columns:repeat(4,1fr); gap:8px;
+                      background:var(--bg); border:1px solid var(--border); border-radius:6px;
+                      padding:10px; margin-top:10px; }
+    .fault-item { font-size:11px; }
+    .fault-item .fk { color:var(--muted); }
+    .fault-item .fv { color:var(--text); font-weight:600; }
+    .fv-on { color:var(--red) !important; }
+    .poll-status { font-size:11px; color:var(--muted); margin-bottom:10px; }
+    @media(max-width:900px) { .grid3,.grid2 { grid-template-columns:1fr; } .fault-settings { grid-template-columns:repeat(2,1fr); } }
+  </style>
+</head>
+<body>
+
+<nav>
+  <span class="title">📊 Resilience4J Live Dashboard</span>
+  <a href="/">Test Console</a>
+  <a href="/swagger-ui.html" target="_blank">Swagger UI</a>
+  <a href="/actuator/health" target="_blank">Health</a>
+  <a href="/h2-console" target="_blank">H2 Console</a>
+</nav>
+
+<div class="container">
+
+  <!-- Top Status Bar -->
+  <div class="top-bar">
+    <span>Circuit Breaker:</span>
+    <span id="cb-badge" class="badge badge-CLOSED">CLOSED</span>
+    <span id="poll-status" class="poll-status">⏳ Starting polling...</span>
+  </div>
+
+  <!-- Fault Control Panel -->
+  <div class="card" style="margin-bottom:12px">
+    <h3>🔥 Fault Injection</h3>
+    <div class="btn-row">
+      <button class="success" onclick="fault('reset')">✅ Reset Healthy</button>
+      <button class="warning" onclick="fault('flaky')">🎲 Flaky 50%</button>
+      <button class="warning" onclick="fault('slow')">🐢 Slow 2s</button>
+      <button class="danger"  onclick="fault('timeout')">⏱ Force Timeout</button>
+      <button class="danger"  onclick="fault('http500')">💥 Force HTTP 500</button>
+      <button class="danger"  onclick="fault('chaos')">🌪 Chaos</button>
+    </div>
+    <div id="fault-display" class="fault-settings">
+      <div class="fault-item"><span class="fk">errorRate: </span><span class="fv" id="f-err">0%</span></div>
+      <div class="fault-item"><span class="fk">fixedDelayMs: </span><span class="fv" id="f-delay">0</span></div>
+      <div class="fault-item"><span class="fk">forceTimeout: </span><span class="fv" id="f-to">false</span></div>
+      <div class="fault-item"><span class="fk">forceHttp500: </span><span class="fv" id="f-500">false</span></div>
+      <div class="fault-item"><span class="fk">chaosMode: </span><span class="fv" id="f-chaos">false</span></div>
+      <div class="fault-item"><span class="fk">rateLimitMode: </span><span class="fv" id="f-rl">false</span></div>
+      <div class="fault-item"><span class="fk">randomDelayMax: </span><span class="fv" id="f-rdm">0</span></div>
+      <div class="fault-item"><span class="fk">maxConcurrent: </span><span class="fv" id="f-mc">10</span></div>
+    </div>
+  </div>
+
+  <!-- Quick Transfer Actions -->
+  <div class="card" style="margin-bottom:12px">
+    <h3>📦 Quick Transfer</h3>
+    <div class="btn-row">
+      <button class="primary" onclick="transfer(50, 10)">Transfer 50/10</button>
+      <button class="primary" onclick="transfer(200, 20)">Transfer 200/20</button>
+      <button class="primary" onclick="transfer(1000, 50)">Transfer 1000/50 (Big)</button>
+      <button onclick="showHistory()">📜 History</button>
+    </div>
+    <pre id="transfer-out">// Transfer result appears here...</pre>
+  </div>
+
+  <!-- Metrics Grid -->
+  <div class="grid3">
+
+    <!-- Circuit Breaker Card -->
+    <div class="card">
+      <h3>⚡ Circuit Breaker</h3>
+      <div class="metric"><span class="key">State</span><span class="val" id="m-cb-state">—</span></div>
+      <div class="metric"><span class="key">Failure Rate</span><span class="val" id="m-cb-fr">—</span></div>
+      <div class="metric"><span class="key">Slow Call Rate</span><span class="val" id="m-cb-scr">—</span></div>
+      <div class="metric"><span class="key">Successful Calls</span><span class="val val-good" id="m-cb-ok">—</span></div>
+      <div class="metric"><span class="key">Failed Calls</span><span class="val val-bad" id="m-cb-fail">—</span></div>
+      <div class="metric"><span class="key">Not Permitted</span><span class="val val-warn" id="m-cb-np">—</span></div>
+      <div class="btn-row" style="margin-top:8px">
+        <button onclick="cbAction('spam/15')">Spam 15</button>
+        <button class="danger" onclick="cbAction('force-open')">Force Open</button>
+        <button class="success" onclick="cbAction('reset')">Reset</button>
+      </div>
+    </div>
+
+    <!-- Retry Card -->
+    <div class="card">
+      <h3>🔄 Retry</h3>
+      <div class="metric"><span class="key">Success w/ Retry</span><span class="val val-good" id="m-r-swr">—</span></div>
+      <div class="metric"><span class="key">Success w/o Retry</span><span class="val val-good" id="m-r-swor">—</span></div>
+      <div class="metric"><span class="key">Failed w/ Retry</span><span class="val val-bad" id="m-r-fwr">—</span></div>
+      <div class="metric"><span class="key">Failed w/o Retry</span><span class="val val-bad" id="m-r-fwor">—</span></div>
+      <div class="btn-row" style="margin-top:8px">
+        <button onclick="retryAction('call')">Call</button>
+        <button onclick="retryAction('spam/5')">Spam 5</button>
+      </div>
+    </div>
+
+    <!-- Rate Limiter Card -->
+    <div class="card">
+      <h3>🚦 Rate Limiter</h3>
+      <div class="metric"><span class="key">Available Permits</span><span class="val" id="m-rl-avail">—</span></div>
+      <div class="metric"><span class="key">Waiting Threads</span><span class="val" id="m-rl-wait">—</span></div>
+      <div class="metric"><span class="key">Limit / period</span><span class="val">5 / 1s</span></div>
+      <div class="btn-row" style="margin-top:8px">
+        <button onclick="rlAction('call')">Call</button>
+        <button onclick="rlAction('spam/20')">Spam 20</button>
+      </div>
+    </div>
+
+    <!-- Bulkhead Card -->
+    <div class="card">
+      <h3>🧱 Bulkhead</h3>
+      <div class="metric"><span class="key">Available Slots</span><span class="val" id="m-bh-avail">—</span></div>
+      <div class="metric"><span class="key">Max Concurrent</span><span class="val" id="m-bh-max">—</span></div>
+      <div class="btn-row" style="margin-top:8px">
+        <button onclick="bhAction('call')">Call</button>
+        <button onclick="bhAction('concurrent/10')">10 Concurrent</button>
+      </div>
+    </div>
+
+    <!-- Time Limiter Card -->
+    <div class="card">
+      <h3>⏳ Time Limiter</h3>
+      <div class="metric"><span class="key">Timeout</span><span class="val">1500ms</span></div>
+      <div class="metric"><span class="key">Last Result</span><span class="val" id="m-tl-last">—</span></div>
+      <div class="btn-row" style="margin-top:8px">
+        <button onclick="tlAction()">Call</button>
+      </div>
+    </div>
+
+    <!-- Cache Card -->
+    <div class="card">
+      <h3>💾 Cache</h3>
+      <div class="metric"><span class="key">Hits</span><span class="val val-good" id="m-c-hits">—</span></div>
+      <div class="metric"><span class="key">Misses</span><span class="val val-warn" id="m-c-misses">—</span></div>
+      <div class="metric"><span class="key">Hit Ratio</span><span class="val" id="m-c-ratio">—</span></div>
+      <div class="btn-row" style="margin-top:8px">
+        <button onclick="cacheAction('metadata/region')">Get "region"</button>
+        <button onclick="cacheAction('all')">Get All</button>
+        <button class="warning" onclick="cacheAction('clear')">Clear</button>
+      </div>
+    </div>
+
+  </div><!-- /grid3 -->
+
+  <!-- Charts -->
+  <div class="grid2">
+    <div class="chart-card">
+      <h3>⚡ Circuit Breaker Call Outcomes (live)</h3>
+      <canvas id="cbChart"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>💾 Cache Hit / Miss Ratio (live)</h3>
+      <canvas id="cacheChart"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <h3>📈 Retry Outcomes Over Time</h3>
+    <canvas id="retryChart" style="max-height:160px"></canvas>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+const BASE = '';
+let cbChart, cacheChart, retryChart;
+let retryHistory = { labels:[], swr:[], swor:[], fwr:[], fwor:[] };
+
+// ---- Chart setup ----
+function initCharts() {
+  const darkGrid = { color:'rgba(255,255,255,0.07)' };
+  const darkTick = { color:'#8b949e' };
+
+  cbChart = new Chart(document.getElementById('cbChart'), {
+    type:'bar',
+    data: { labels:['Successful','Failed','Not Permitted'],
+            datasets:[{ label:'Calls',
+              data:[0,0,0],
+              backgroundColor:['#3fb950','#f85149','#d29922'],
+              borderRadius:4 }] },
+    options: { responsive:true, plugins:{legend:{display:false}},
+               scales:{ x:{grid:darkGrid,ticks:darkTick}, y:{grid:darkGrid,ticks:darkTick,beginAtZero:true} } }
+  });
+
+  cacheChart = new Chart(document.getElementById('cacheChart'), {
+    type:'doughnut',
+    data: { labels:['Hits','Misses'],
+            datasets:[{ data:[0,0], backgroundColor:['#3fb950','#d29922'],
+                        borderColor:['#0d1117','#0d1117'], borderWidth:3 }] },
+    options: { responsive:true, plugins:{legend:{labels:{color:'#e6edf3'}}} }
+  });
+
+  retryChart = new Chart(document.getElementById('retryChart'), {
+    type:'line',
+    data: { labels:[],
+            datasets:[
+              { label:'Success w/ Retry',   data:[], borderColor:'#3fb950', tension:.3, fill:false },
+              { label:'Success w/o Retry',  data:[], borderColor:'#58a6ff', tension:.3, fill:false },
+              { label:'Failed w/ Retry',    data:[], borderColor:'#f85149', tension:.3, fill:false }
+            ] },
+    options: { responsive:true,
+               plugins:{legend:{labels:{color:'#8b949e',font:{size:11}}}},
+               scales:{ x:{grid:darkGrid,ticks:{...darkTick,maxTicksLimit:10}},
+                        y:{grid:darkGrid,ticks:darkTick,beginAtZero:true} } }
+  });
+}
+
+// ---- Polling ----
+async function pollMetrics() {
+  try {
+    const res = await fetch(BASE + '/api/metrics/resilience');
+    const json = await res.json();
+    const d = json.data;
+    if (!d) return;
+
+    // Circuit Breaker
+    const cbState = d.circuitBreaker.state;
+    updateCBBadge(cbState);
+    document.getElementById('m-cb-state').textContent = cbState;
+    setValClass('m-cb-state', cbState === 'CLOSED' ? 'good' : cbState === 'OPEN' ? 'bad' : 'warn');
+    document.getElementById('m-cb-fr').textContent   = fmt1(d.circuitBreaker.failureRate) + '%';
+    document.getElementById('m-cb-scr').textContent  = fmt1(d.circuitBreaker.slowCallRate) + '%';
+    document.getElementById('m-cb-ok').textContent   = d.circuitBreaker.successfulCalls;
+    document.getElementById('m-cb-fail').textContent = d.circuitBreaker.failedCalls;
+    document.getElementById('m-cb-np').textContent   = d.circuitBreaker.notPermittedCalls;
+    cbChart.data.datasets[0].data = [
+      d.circuitBreaker.successfulCalls,
+      d.circuitBreaker.failedCalls,
+      d.circuitBreaker.notPermittedCalls
+    ];
+    cbChart.update('none');
+
+    // Retry
+    document.getElementById('m-r-swr').textContent   = d.retry.successfulCallsWithRetry;
+    document.getElementById('m-r-swor').textContent  = d.retry.successfulCallsWithoutRetry;
+    document.getElementById('m-r-fwr').textContent   = d.retry.failedCallsWithRetry;
+    document.getElementById('m-r-fwor').textContent  = d.retry.failedCallsWithoutRetry;
+    const now = new Date().toLocaleTimeString();
+    if (retryHistory.labels.length > 20) { retryHistory.labels.shift(); retryHistory.swr.shift(); retryHistory.swor.shift(); retryHistory.fwr.shift(); }
+    retryHistory.labels.push(now);
+    retryHistory.swr.push(d.retry.successfulCallsWithRetry);
+    retryHistory.swor.push(d.retry.successfulCallsWithoutRetry);
+    retryHistory.fwr.push(d.retry.failedCallsWithRetry);
+    retryChart.data.labels = retryHistory.labels;
+    retryChart.data.datasets[0].data = retryHistory.swr;
+    retryChart.data.datasets[1].data = retryHistory.swor;
+    retryChart.data.datasets[2].data = retryHistory.fwr;
+    retryChart.update('none');
+
+    // Rate Limiter
+    document.getElementById('m-rl-avail').textContent = d.rateLimiter.availablePermissions;
+    document.getElementById('m-rl-wait').textContent  = d.rateLimiter.waitingThreads;
+
+    // Bulkhead
+    document.getElementById('m-bh-avail').textContent = d.bulkhead.availableConcurrentCalls;
+    document.getElementById('m-bh-max').textContent   = d.bulkhead.maxAllowedConcurrentCalls;
+
+    // Cache
+    const hits   = d.cache.hits;
+    const misses = d.cache.misses;
+    const total  = hits + misses;
+    document.getElementById('m-c-hits').textContent   = hits;
+    document.getElementById('m-c-misses').textContent = misses;
+    document.getElementById('m-c-ratio').textContent  = total > 0 ? fmt1(hits/total*100) + '%' : '—';
+    cacheChart.data.datasets[0].data = [hits, misses];
+    cacheChart.update('none');
+
+    document.getElementById('poll-status').textContent = '🟢 Live — last update: ' + now;
+  } catch(e) {
+    document.getElementById('poll-status').textContent = '🔴 Poll error: ' + e.message;
+  }
+}
+
+async function pollFault() {
+  try {
+    const res = await fetch(BASE + '/api/fault/settings');
+    const json = await res.json();
+    const d = json.data;
+    if (!d) return;
+    setFaultDisplay(d);
+  } catch(e) {}
+}
+
+function setFaultDisplay(d) {
+  setText('f-err',   d.errorRate + '%',       d.errorRate > 0);
+  setText('f-delay', d.fixedDelayMs + 'ms',   d.fixedDelayMs > 0);
+  setText('f-to',    String(d.forceTimeout),   d.forceTimeout);
+  setText('f-500',   String(d.forceHttp500),   d.forceHttp500);
+  setText('f-chaos', String(d.chaosMode),      d.chaosMode);
+  setText('f-rl',    String(d.rateLimitMode),  d.rateLimitMode);
+  setText('f-rdm',   d.randomDelayMaxMs + 'ms', d.randomDelayMaxMs > 0);
+  setText('f-mc',    String(d.maxConcurrentDownstream), false);
+}
+
+function setText(id, val, bad) {
+  const el = document.getElementById(id);
+  el.textContent = val;
+  el.className = 'fv' + (bad ? ' fv-on' : '');
+}
+
+function updateCBBadge(state) {
+  const el = document.getElementById('cb-badge');
+  el.textContent = state;
+  el.className = 'badge badge-' + state;
+}
+
+function setValClass(id, cls) {
+  const el = document.getElementById(id);
+  el.classList.remove('val-good','val-warn','val-bad');
+  if (cls) el.classList.add('val-' + cls);
+}
+
+function fmt1(n) { return isNaN(n)||n<0 ? '0.0' : n.toFixed(1); }
+
+// ---- Action buttons ----
+async function fault(action) {
+  try {
+    const res = await fetch(BASE + '/api/fault/' + action);
+    const json = await res.json();
+    if (json.data) setFaultDisplay(json.data);
+  } catch(e) {}
+}
+
+async function transfer(n, ps) {
+  document.getElementById('transfer-out').textContent = '⏳ Transferring ' + n + ' records...';
+  try {
+    const res = await fetch(BASE + `/api/transfer/start/${n}/${ps}`);
+    const json = await res.json();
+    document.getElementById('transfer-out').textContent = JSON.stringify(json.data, null, 2);
+  } catch(e) { document.getElementById('transfer-out').textContent = 'Error: ' + e.message; }
+}
+
+async function showHistory() {
+  try {
+    const res = await fetch(BASE + '/api/transfer/history');
+    const json = await res.json();
+    document.getElementById('transfer-out').textContent = JSON.stringify(json.data, null, 2);
+  } catch(e) {}
+}
+
+async function cbAction(path) { await quickApi('/api/cb/' + path, 'm-cb-state'); }
+async function retryAction(path) { await quickApi('/api/retry/' + path, 'm-r-swr'); }
+async function rlAction(path)   { await quickApi('/api/rate-limiter/' + path, 'm-rl-avail'); }
+async function bhAction(path)   { await quickApi('/api/bulkhead/' + path, 'm-bh-avail'); }
+async function tlAction() {
+  try {
+    const res = await fetch(BASE + '/api/time-limiter/call');
+    const json = await res.json();
+    document.getElementById('m-tl-last').textContent = json.data?.outcome || '—';
+  } catch(e) {}
+}
+async function cacheAction(path) { await quickApi('/api/cache/' + path, 'm-c-hits'); }
+
+async function quickApi(path) {
+  try { await fetch(BASE + path); } catch(e) {}
+}
+
+// ---- Boot ----
+initCharts();
+pollMetrics();
+pollFault();
+setInterval(pollMetrics, 2000);
+setInterval(pollFault, 3000);
+</script>
+</body>
+</html>
