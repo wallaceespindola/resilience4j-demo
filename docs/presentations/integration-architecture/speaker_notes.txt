@@ -1,0 +1,109 @@
+Integration Architecture - Speaker Notes
+=================================================
+
+Slide 1: Title
+- Welcome and introduce the topic
+- This is a full-context summary of banking integration architecture decisions
+
+Slide 2: Agenda
+- Walk through the 8 major topics we'll cover
+- Emphasis on real-world banking patterns, not theoretical
+
+Slide 3: Integration Scenario
+- We're looking at 5 topics/streams, each carrying 100-field messages
+- Raw payload is 1 KB per message
+- We'll evaluate traffic from 100 to 100K msgs/min/stream
+- Total throughput across all streams ranges from 500 to 500K msgs/min
+
+Slide 4: Message Size by Protocol
+- Kafka+Avro has the lowest overhead at 18.5%
+- REST+Protobuf has the highest at 90% - nearly double the raw payload
+- This is critical for cost and capacity planning at scale
+- The overhead comes from protocol framing, headers, and serialization metadata
+
+Slide 5: Protocol Overhead Breakdown
+- Avro is compact because it uses a schema registry - no field names in wire format
+- Kafka adds minimal framing (timestamp, CRC, headers)
+- Pulsar has richer metadata per message than Kafka
+- REST is penalized by verbose HTTP/1.1 headers on every request
+
+Slide 6: Throughput Analysis
+- At 100 msgs/min/stream, all protocols are trivial (< 1 MB/min)
+- At 10K msgs/min/stream, we're moving ~60 MB/min with Kafka
+- At 100K msgs/min/stream, we're at ~593 MB/min with Kafka
+- The gap between Kafka and REST widens at higher throughput
+
+Slide 7: Peak Bandwidth
+- At the highest rate, Kafka needs ~79 Mbps sustained - easily fits 1 Gbps
+- REST needs ~127 Mbps - 60% more bandwidth for the same data
+- Daily volumes approach 1 TB/day for Kafka, 1.4 TB/day for REST
+- Compression (LZ4/Snappy) can reduce actual bandwidth by 40-60%
+
+Slide 8: Integration Options
+- Three categories: streaming, API-based, and database integration
+- Streaming options range from Kafka (industry standard) to Redis Streams (lightweight)
+- API options: gRPC for low-latency, REST for broad compatibility
+- Database integration: CDC captures changes at the source without application changes
+
+Slide 9: Oracle to Oracle Architecture
+- This is the recommended pattern for Oracle-to-Oracle data flow
+- Key: one-directional flow through an event backbone
+- CDC captures changes from the write DB without impacting its performance
+- The read DB receives events and applies them idempotently via upsert sinks
+
+Slide 10: Latency Factor Model
+- This model uses "same DB" as factor 1 baseline (sub-millisecond)
+- Oracle RAC adds minimal latency (1-2x)
+- CDC through Kafka adds 10-100x but provides decoupling
+- DB Polling is the worst option: 50-3000x latency
+- gRPC Streaming offers the best latency among API options
+
+Slide 11: Banking Industry Reality
+- Banks don't optimize for speed - they optimize for correctness
+- Determinism: same input always produces same output
+- Auditability: regulators require full transaction trails
+- Replayability: must reconstruct state for investigations
+- Isolation: one system failure cannot bring down others
+
+Slide 12: Most Typical Banking Stack
+- Oracle is the dominant system of record in Tier-1 banks
+- GoldenGate or Debezium CDC feeds events to Kafka
+- Downstream consumers include fraud detection, analytics, and APIs
+- This three-tier model has proven itself across major financial institutions
+
+Slide 13: Maturity Model
+- Most banks today are at Level 1-2 (replication or early CDC)
+- Target for modernization is Level 2-3 (CDC + Event Backbone)
+- Level 4-5 represents full event-driven architecture - rare in banking today
+- Level 0 (shared DB) is a legacy anti-pattern still found in older systems
+
+Slide 14: Five Architecture Mistakes
+- Dual writes: the #1 source of data inconsistency
+- Replication != integration: copying tables doesn't decouple systems
+- Without replay, you can't debug or audit past state
+- Exactly-once is impossible in distributed systems - don't design for it
+- Systems downstream of yours don't respond in constant time
+
+Slide 15: The Banking Solution
+- At-least-once ensures no message is lost
+- Idempotent consumers safely handle duplicate deliveries
+- Ordered events enable deterministic state reconstruction
+- These three principles address all five mistakes
+
+Slide 16: Golden Triangle
+- This is the architectural pattern that brings it all together
+- Oracle provides the ground truth (correctness)
+- Kafka provides the distribution layer (decoupling)
+- APIs provide the interface layer (agility)
+- Each layer has a distinct responsibility - don't blur the lines
+
+Slide 17: Final Architectural Position
+- The architecture discussed maps to Level 2-3 maturity
+- This aligns with what Tier-1 banks are implementing today
+- Key characteristics: one-direction flow, CDC, idempotent processing
+- Schema governance ensures contract stability between systems
+
+Slide 18: Key Takeaways & Close
+- Recap the five main points
+- Thank the audience
+- Share contact information for follow-up questions
