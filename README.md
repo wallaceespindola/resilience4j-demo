@@ -1,4 +1,27 @@
+<div align="center">
+
+<img src="https://avatars.githubusercontent.com/u/26137419" alt="Resilience4J" width="110" style="border-radius:12px"/>
+
 # Resilience4J Demo
+
+**Java 21 · Spring Boot 3 · Six fault-tolerance patterns in one project**
+
+[![CI](https://github.com/wallaceespindola/resilience4j-demo/actions/workflows/ci.yml/badge.svg)](https://github.com/wallaceespindola/resilience4j-demo/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/wallaceespindola/resilience4j-demo/actions/workflows/codeql.yml/badge.svg)](https://github.com/wallaceespindola/resilience4j-demo/actions/workflows/codeql.yml)
+[![Coverage](https://img.shields.io/badge/coverage-85%25-brightgreen)](https://github.com/wallaceespindola/resilience4j-demo)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+
+[![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/21/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Resilience4J](https://img.shields.io/badge/Resilience4J-2.2-29ABE2)](https://resilience4j.readme.io/)
+[![Maven](https://img.shields.io/badge/Maven-3-C71A36?logo=apachemaven&logoColor=white)](https://maven.apache.org/)
+[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
+[![JUnit5](https://img.shields.io/badge/JUnit-5-25A162?logo=junit5&logoColor=white)](https://junit.org/junit5/)
+[![Swagger](https://img.shields.io/badge/Swagger-UI-85EA2D?logo=swagger&logoColor=black)](http://localhost:8080/swagger-ui.html)
+
+</div>
+
+---
 
 A Java 21 / Spring Boot 3 project covering all six Resilience4J modules: CircuitBreaker,
 Retry, RateLimiter, Bulkhead, TimeLimiter, and Cache.
@@ -7,15 +30,6 @@ Built around a bulk-transfer scenario where you push data through a simulated do
 API — one you can deliberately break (slow responses, flaky errors, forced timeouts, HTTP 500)
 and watch how each resilience pattern reacts. There's a test console and a live dashboard
 included, so you can run experiments without writing a single curl command.
-
----
-
-## Author
-
-**Wallace Espindola** — Software Engineer Sr. / Solutions Architect / Java & Python Dev
-[wallace.espindola@gmail.com](mailto:wallace.espindola@gmail.com) ·
-[LinkedIn](https://www.linkedin.com/in/wallaceespindola/) ·
-[GitHub](https://github.com/wallaceespindola/)
 
 ---
 
