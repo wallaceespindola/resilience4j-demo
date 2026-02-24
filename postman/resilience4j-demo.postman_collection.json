@@ -1,0 +1,122 @@
+{
+  "info": {
+    "name": "Resilience4J Demo",
+    "description": "All endpoints for the Resilience4J Demo training app",
+    "_postman_id": "r4j-demo-collection-v1",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Fault Injection",
+      "item": [
+        { "name": "Get Settings",    "request": { "method": "GET",  "url": "{{baseUrl}}/api/fault/settings" } },
+        { "name": "Reset Healthy",   "request": { "method": "GET",  "url": "{{baseUrl}}/api/fault/reset" } },
+        { "name": "Flaky 50%",       "request": { "method": "GET",  "url": "{{baseUrl}}/api/fault/flaky" } },
+        { "name": "Slow 2s",         "request": { "method": "GET",  "url": "{{baseUrl}}/api/fault/slow" } },
+        { "name": "Force Timeout",   "request": { "method": "GET",  "url": "{{baseUrl}}/api/fault/timeout" } },
+        { "name": "Force HTTP 500",  "request": { "method": "GET",  "url": "{{baseUrl}}/api/fault/http500" } },
+        { "name": "Chaos Mode",      "request": { "method": "GET",  "url": "{{baseUrl}}/api/fault/chaos" } },
+        { "name": "Set Error Rate",  "request": { "method": "GET",  "url": "{{baseUrl}}/api/fault/error-rate/50" } },
+        { "name": "Set Delay",       "request": { "method": "GET",  "url": "{{baseUrl}}/api/fault/delay/1000" } },
+        {
+          "name": "Apply Custom Settings",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/fault/settings",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"errorRate\": 30,\n  \"fixedDelayMs\": 500,\n  \"randomDelayMaxMs\": 1000,\n  \"forceTimeout\": false,\n  \"forceHttp500\": false,\n  \"rateLimitMode\": false,\n  \"maxConcurrentDownstream\": 5,\n  \"chaosMode\": false\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transfer",
+      "item": [
+        {
+          "name": "Start Transfer (POST)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/transfer/start",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"totalRecords\": 100,\n  \"pageSize\": 10\n}" }
+          }
+        },
+        { "name": "Start Transfer (GET)",  "request": { "method": "GET", "url": "{{baseUrl}}/api/transfer/start/100/10" } },
+        { "name": "Big Transfer 1000/50",  "request": { "method": "GET", "url": "{{baseUrl}}/api/transfer/start/1000/50" } },
+        { "name": "Transfer History",      "request": { "method": "GET", "url": "{{baseUrl}}/api/transfer/history" } },
+        { "name": "Batch Records",         "request": { "method": "GET", "url": "{{baseUrl}}/api/transfer/batch/BATCH-XXXXXXXX" } }
+      ]
+    },
+    {
+      "name": "Circuit Breaker",
+      "item": [
+        { "name": "Single Call",    "request": { "method": "GET", "url": "{{baseUrl}}/api/cb/call" } },
+        { "name": "Spam 10 Calls",  "request": { "method": "GET", "url": "{{baseUrl}}/api/cb/spam/10" } },
+        { "name": "Get State",      "request": { "method": "GET", "url": "{{baseUrl}}/api/cb/state" } },
+        { "name": "Force OPEN",     "request": { "method": "GET", "url": "{{baseUrl}}/api/cb/force-open" } },
+        { "name": "Reset CLOSED",   "request": { "method": "GET", "url": "{{baseUrl}}/api/cb/reset" } }
+      ]
+    },
+    {
+      "name": "Retry",
+      "item": [
+        { "name": "Single Call",  "request": { "method": "GET", "url": "{{baseUrl}}/api/retry/call" } },
+        { "name": "Spam 5 Calls", "request": { "method": "GET", "url": "{{baseUrl}}/api/retry/spam/5" } }
+      ]
+    },
+    {
+      "name": "Rate Limiter",
+      "item": [
+        { "name": "Single Call",  "request": { "method": "GET", "url": "{{baseUrl}}/api/rate-limiter/call" } },
+        { "name": "Spam 20",      "request": { "method": "GET", "url": "{{baseUrl}}/api/rate-limiter/spam/20" } },
+        { "name": "Metrics",      "request": { "method": "GET", "url": "{{baseUrl}}/api/rate-limiter/metrics" } }
+      ]
+    },
+    {
+      "name": "Bulkhead",
+      "item": [
+        { "name": "Single Call",    "request": { "method": "GET", "url": "{{baseUrl}}/api/bulkhead/call" } },
+        { "name": "10 Concurrent",  "request": { "method": "GET", "url": "{{baseUrl}}/api/bulkhead/concurrent/10" } },
+        { "name": "Metrics",        "request": { "method": "GET", "url": "{{baseUrl}}/api/bulkhead/metrics" } }
+      ]
+    },
+    {
+      "name": "Time Limiter",
+      "item": [
+        { "name": "Single Call", "request": { "method": "GET", "url": "{{baseUrl}}/api/time-limiter/call" } }
+      ]
+    },
+    {
+      "name": "Cache",
+      "item": [
+        { "name": "Get 'region'",   "request": { "method": "GET", "url": "{{baseUrl}}/api/cache/metadata/region" } },
+        { "name": "Get 'env'",      "request": { "method": "GET", "url": "{{baseUrl}}/api/cache/metadata/env" } },
+        { "name": "Get All",        "request": { "method": "GET", "url": "{{baseUrl}}/api/cache/all" } },
+        { "name": "Stats",          "request": { "method": "GET", "url": "{{baseUrl}}/api/cache/stats" } },
+        { "name": "Clear Cache",    "request": { "method": "GET", "url": "{{baseUrl}}/api/cache/clear" } }
+      ]
+    },
+    {
+      "name": "Metrics",
+      "item": [
+        { "name": "Resilience Snapshot", "request": { "method": "GET", "url": "{{baseUrl}}/api/metrics/resilience" } }
+      ]
+    },
+    {
+      "name": "Actuator",
+      "item": [
+        { "name": "Health",      "request": { "method": "GET", "url": "{{baseUrl}}/actuator/health" } },
+        { "name": "Info",        "request": { "method": "GET", "url": "{{baseUrl}}/actuator/info" } },
+        { "name": "Metrics",     "request": { "method": "GET", "url": "{{baseUrl}}/actuator/metrics" } },
+        { "name": "Prometheus",  "request": { "method": "GET", "url": "{{baseUrl}}/actuator/prometheus" } },
+        { "name": "CB Events",   "request": { "method": "GET", "url": "{{baseUrl}}/actuator/circuitbreakerevents" } }
+      ]
+    }
+  ]
+}

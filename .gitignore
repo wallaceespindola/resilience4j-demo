@@ -1,16 +1,6 @@
-# Compiled class file
+# ---- Java / Maven ----
+
 *.class
-
-# Log file
-*.log
-
-# BlueJ files
-*.ctxt
-
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
-
-# Package Files #
 *.jar
 *.war
 *.nar
@@ -18,21 +8,99 @@
 *.zip
 *.tar.gz
 *.rar
+target/
+spring-shell.log
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# JVM crash logs
 hs_err_pid*
 replay_pid*
 
-# IDE files
+# BlueJ / J2ME legacy
+*.ctxt
+.mtj.tmp/
+
+# H2 persisted DB files
+*.mv.db
+*.trace.db
+
+
+# ---- IDEs ----
+
+# IntelliJ IDEA
 .idea/
 *.iml
-.vscode/
+*.iws
+*.ipr
+out/
 
-# OS files
+# Eclipse
+.classpath
+.project
+.settings/
+
+# NetBeans
+nbproject/
+nb-configuration.xml
+
+# VS Code
+.vscode/
+*.code-workspace
+
+
+# ---- OS ----
+
 .DS_Store
-*/.DS_Store/*
-# AI tools
-.ai/
+**/.DS_Store
+Thumbs.db
+
+
+# ---- AI tools ----
+
+# Claude Code
 .claude/
+CLAUDE.md
 CLAUDE.MD
+
+# AI agents / assistant systems
+.ai/
+.agents/
+AGENTS.md
 AGENTS.MD
+
+# GitHub Copilot
+.copilot/
+copilot-instructions.md
+
+# Cursor
+.cursor/
+.cursorrules
+.cursorignore
+
+# Aider
+.aider*
+aider.conf.yml
+
+# Codeium
+.codeium/
+
+# Continue
+.continue/
+
+# Windsurf
+.windsurf/
+
+# Tabnine
+.tabnine*
+
+
+# ---- Logs ----
+
+logs/
+*.log
+
+
+# ---- Env / secrets ----
+
+.env
+.env.*
+!.env.example
