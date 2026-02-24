@@ -1,0 +1,69 @@
+# ---- Version control ----
+
+.git/
+.gitignore
+
+
+# ---- CI/CD ----
+
+.github/
+
+
+# ---- IDEs ----
+
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+out/
+*.code-workspace
+
+
+# ---- AI tools ----
+
+.ai/
+.agents/
+.claude/
+.copilot/
+.cursor/
+.cursorrules
+.cursorignore
+.aider*
+.codeium/
+.continue/
+.windsurf/
+.tabnine*
+CLAUDE.md
+AGENTS.md
+
+
+# ---- Documentation ----
+
+docs/
+postman/
+*.md
+!README.md
+
+
+# ---- Build artifacts ----
+
+target/
+
+
+# ---- Logs ----
+
+*.log
+logs/
+
+
+# ---- OS metadata ----
+
+.DS_Store
+**/.DS_Store
+Thumbs.db
+
+
+# ---- Dev tooling ----
+
+Makefile
