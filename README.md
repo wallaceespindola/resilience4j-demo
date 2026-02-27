@@ -4,7 +4,7 @@
 
 # Resilience4J Demo
 
-**Java 21 · Spring Boot 3 · Six fault-tolerance patterns in one project**
+**Java 21 · Spring Boot 3.5 · Six fault-tolerance patterns in one project**
 
 [![CI](https://github.com/wallaceespindola/resilience4j-demo/actions/workflows/ci.yml/badge.svg)](https://github.com/wallaceespindola/resilience4j-demo/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/wallaceespindola/resilience4j-demo/actions/workflows/codeql.yml/badge.svg)](https://github.com/wallaceespindola/resilience4j-demo/actions/workflows/codeql.yml)
@@ -12,8 +12,8 @@
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
 
 [![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/21/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
-[![Resilience4J](https://img.shields.io/badge/Resilience4J-2.2-29ABE2)](https://resilience4j.readme.io/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5-6DB33F?logo=springboot&logoColor=white)](https://spring.io/projects/spring-boot)
+[![Resilience4J](https://img.shields.io/badge/Resilience4J-2.3-29ABE2)](https://resilience4j.readme.io/)
 [![Maven](https://img.shields.io/badge/Maven-3-C71A36?logo=apachemaven&logoColor=white)](https://maven.apache.org/)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white)](Dockerfile)
 [![JUnit5](https://img.shields.io/badge/JUnit-5-25A162?logo=junit5&logoColor=white)](https://junit.org/junit5/)
@@ -295,8 +295,8 @@ to `http://localhost:8080`.
 
 ## Tech stack
 
-- **Java 21** · **Spring Boot 3.4** · **Maven**
-- **Resilience4J 2.2** — CircuitBreaker, Retry, RateLimiter, Bulkhead, TimeLimiter, Cache
+- **Java 21** · **Spring Boot 3.5** · **Maven**
+- **Resilience4J 2.3** — CircuitBreaker, Retry, RateLimiter, Bulkhead, TimeLimiter, Cache
 - **Spring Data JPA + H2**
 - **Caffeine + JCache** (backing store for R4J Cache)
 - **Micrometer + Prometheus**
