@@ -35,14 +35,26 @@ included, so you can run experiments without writing a single curl command.
 
 ## What you get after starting the app
 
-| URL                                     | What it is                                        |
-|-----------------------------------------|---------------------------------------------------|
-| `http://localhost:8080/`                | Test Console — one button per endpoint            |
-| `http://localhost:8080/dashboard.html`  | Live Dashboard — Chart.js charts, polls every 2s  |
-| `http://localhost:8080/swagger-ui.html` | Swagger UI — full API docs                        |
-| `http://localhost:8080/actuator/health` | Health endpoint (includes CB state and timestamp) |
-| `http://localhost:8080/actuator/info`   | App info (version, author)                        |
-| `http://localhost:8080/h2-console`      | H2 in-memory DB browser                           |
+| URL                                                                         | What it is                                        |
+|-----------------------------------------------------------------------------|---------------------------------------------------|
+| [http://localhost:8080/](http://localhost:8080/)                            | Test Console — one button per endpoint            |
+| [http://localhost:8080/dashboard.html](http://localhost:8080/dashboard.html)  | Live Dashboard — Chart.js charts, polls every 2s  |
+| [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html) | Swagger UI — full API docs                        |
+| [http://localhost:8080/actuator/health](http://localhost:8080/actuator/health) | Health endpoint (includes CB state and timestamp) |
+| [http://localhost:8080/actuator/info](http://localhost:8080/actuator/info)   | App info (version, author)                        |
+| [http://localhost:8080/h2-console](http://localhost:8080/h2-console)         | H2 in-memory DB browser                           |
+
+---
+
+## Screenshots
+
+**Dashboard — fault injection controls and module panels**
+
+![Dashboard](resources/images/dashboard.png)
+
+**Live charts — Circuit Breaker outcomes, Cache hit/miss ratio, Retry over time**
+
+![Charts](resources/images/charts.png)
 
 ---
 

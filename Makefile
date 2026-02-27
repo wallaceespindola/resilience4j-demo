@@ -23,6 +23,7 @@ test: ## Run all unit tests
 coverage: ## Run tests and generate JaCoCo HTML report (target/site/jacoco/index.html)
 	$(MVN) -B verify
 	@echo "Report: target/site/jacoco/index.html"
+	@open target/site/jacoco/index.html 2>/dev/null || xdg-open target/site/jacoco/index.html 2>/dev/null || true
 
 clean: ## Clean build artifacts
 	$(MVN) clean
