@@ -33,6 +33,22 @@ included, so you can run experiments without writing a single curl command.
 
 ---
 
+## Table of Contents
+
+- [What you get after starting the app](#what-you-get-after-starting-the-app)
+- [Screenshots](#screenshots)
+- [How to trigger each pattern](#how-to-trigger-each-pattern)
+- [Quick start](#quick-start)
+- [Project layout](#project-layout)
+- [API reference](#api-reference)
+- [Resilience4J configuration](#resilience4j-configuration)
+- [CI/CD](#cicd)
+- [Postman collection](#postman-collection)
+- [Tech stack](#tech-stack)
+- [Author](#author)
+
+---
+
 ## What you get after starting the app
 
 | URL                                                                         | What it is                                        |
